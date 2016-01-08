@@ -1,0 +1,65 @@
+setwd("C:/R")
+DF<- read.csv("Deficiencies.csv")
+library(dplyr)
+library(ggplot2)
+df<- tbl_df(DF)
+df_n<-select(df,Federal.Provider.Number,Survey.Date,Deficiency.Prefix,Deficiency.Tag.Number,Scope.Severity.Code,Correction.Date,Inspection.Cycle,Standard.Deficiency,Complaint.Deficiency)
+"redundant descriptive columns were removed"
+df_n$Survey.Date<-as.Date(df_n$Survey.Date[1:479167],"%m/%d/%Y")[]
+df_n$Correction.Date<-as.Date(df_n$Correction.Date[1:479167],"%m/%d/%Y")
+"Cleaning data by transforming date variables"
+"Creat a column of time difference between Survey.Date and Correction.Date"
+Time.Difference<-df_n$Correction.Date-df_n$Survey.Date
+Time.Difference<-as.numeric(Time.Difference)
+df_n<-cbind(df_n,Time.Difference)
+fix(df_n)
+df_n %>%
+group_by(Federal.Provider.Number) %>%
+summarise(avg_df = mean(Survey.Date),
+min_df = min(Survey.Date),
+max_df = max(Survey.Date),
+total = n())
+x<-df_n$Federal.Provider.Number
+ggplot() + aes(x)+ geom_histogram(binwidth=1, colour="black", fill="white")
+which.max(table(x))
+table(x)[624]
+df_f<-filter(df_n,Federal.Provider.Number=="055017")
+t<-df_f %>%
+group_by(Survey.Date) %>%
+summarise(total = n())
+fix(t)
+t1<-t[1:49,2]
+t2<-t[2:50,2]
+date<-t[1:50,1]
+Percent.Change<-(t2-t1)/t1
+Percent.Change<-rbind(0,Percent.Change)
+Percent.Change<-cbind(date,Percent.Change)
+colnames(Percent.Change)<-c("Survey.Date","Percent.Change")
+fix(Percent.Change)
+t<-df_f %>%
+group_by(Survey.Date) %>%
+summarise(total = n())
+"Calculate frequency for different Survey Date in type 055017"
+t1<-t[1:49,2]
+t2<-t[2:50,2]
+date<-t[1:50,1]
+Percent.Change<-(t2-t1)/t1
+fix(Percent.Change)
+Percent.Change<-rbind(0,Percent.Change)
+fix(Percent.Change)
+fix(date)
+Percent.Change<-cbind(date,Percent.Change)
+fix(Percent.Change)
+colnames(Percent.Change)<-c("Survey.Date","Percent.Change")
+fix(Percent.Change)
+ggplot() + aes(x_d) + geom_freqpoly(aes(group=1))
+x_d<-df_f$Survey.Date
+ggplot() + aes(x_d) + geom_freqpoly(aes(group=1))
+df_r<-select(df_n,Standard.Deficiency,Complaint.Deficiency)
+tt<-filter(df_r,Standard.Deficiency=="true"&Complaint.Deficiency=="true")
+tf<-filter(df_r,Standard.Deficiency=="true"&Complaint.Deficiency=="false")
+ft<-filter(df_r,Standard.Deficiency=="false"&Complaint.Deficiency=="true")
+ff<-filter(df_r,Standard.Deficiency=="false"&Complaint.Deficiency=="false")
+test<-c(nrow(tt),nrow(tf),nrow(ft),nrow(ff))
+dim(test)<-c(2,2)
+chisq.test(test,correct = FALSE)

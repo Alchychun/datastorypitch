@@ -1,0 +1,110 @@
+
+"55017, Hearts & Hands Post Acute Care & Rehab Center has the highest number of deficiences with 230"
+
+install.packages("dplyr")
+install.packages("ggplot2")
+
+
+setwd("C:/R")
+DF<- read.csv("Deficiencies.csv")
+
+library(dplyr)
+library(ggplot2)
+
+
+df<- tbl_df(DF)
+df_n<-select(df,Federal.Provider.Number,Survey.Date,Deficiency.Prefix,Deficiency.Tag.Number,Scope.Severity.Code,Correction.Date,Inspection.Cycle,Standard.Deficiency,Complaint.Deficiency)
+
+"redundant descriptive columns were removed"
+
+df_n$Survey.Date<-as.Date(df_n$Survey.Date[1:479167],"%m/%d/%Y")[]
+df_n$Correction.Date<-as.Date(df_n$Correction.Date[1:479167],"%m/%d/%Y")
+
+"Cleaning data by transforming date variables"
+
+"Creat a column of time difference between Survey.Date and Correction.Date"
+
+Time.Difference<-df_n$Correction.Date-df_n$Survey.Date
+Time.Difference<-as.numeric(Time.Difference)
+df_n<-cbind(df_n,Time.Difference)
+
+"grouping data by the Federal Provider Number and check their Survey Date"
+
+df_n %>%
+  group_by(Federal.Provider.Number) %>%
+  summarise(avg_df = mean(Survey.Date),
+            min_df = min(Survey.Date),
+            max_df = max(Survey.Date),
+            total = n())
+
+"I generated average, minimum and maximum of Survey Date in different groups."
+
+"I plotted the histogram in different groups to check the frequency of each Federal Provider Number"
+
+x<-df_n$Federal.Provider.Number
+ggplot() + aes(x)+ geom_histogram(binwidth=1, colour="black", fill="white")
+
+" I found a particular Federal Provider Number generated a particularly high frequency"
+
+"I used table() and which.max() function to find it out"
+
+which.max(table(x))
+table(x)[624]
+
+"it's 55017 with a frequency of 230"
+
+"I used filter() function to filter a table which only contains type 55017"
+
+df_f<-filter(df_n,Federal.Provider.Number=="55017")
+
+"Calculate percent change according to Survey Date"
+
+t<-df_f %>%
+  group_by(Survey.Date) %>%
+  summarise(total = n())
+
+"Calculate frequency for different Survey Date in type 055017"
+
+t1<-t[1:49,2]
+t2<-t[2:50,2]
+date<-t[1:50,1]
+Percent.Change<-(t2-t1)/t1
+
+"Calculate percent change of survey date frequency"
+
+Percent.Change<-rbind(0,Percent.Change)
+Percent.Change<-cbind(date,Percent.Change)
+colnames(Percent.Change)<-c("Survey.Date","Percent.Change")
+
+"percent change of survey.date frequency shows in the column Percent.Change"
+
+"plot the count of type 055017 over time"
+
+x_d<-df_f$Survey.Date
+ggplot() + aes(x_d) + geom_freqpoly(aes(group=1))
+
+"I will check the relationship between Standard.Deficiency and Complaint.Deficiency"
+"Especially, I will use Pearson test to their independency"
+
+df_r<-select(df_n,Standard.Deficiency,Complaint.Deficiency)
+
+tt<-filter(df_r,Standard.Deficiency=="true"&Complaint.Deficiency=="true")
+tf<-filter(df_r,Standard.Deficiency=="true"&Complaint.Deficiency=="false")
+ft<-filter(df_r,Standard.Deficiency=="false"&Complaint.Deficiency=="true")
+ff<-filter(df_r,Standard.Deficiency=="false"&Complaint.Deficiency=="false")
+
+test<-c(nrow(tt),nrow(tf),nrow(ft),nrow(ff))
+dim(test)<-c(2,2)
+chisq.test(test,correct = FALSE)
+
+"test result shows that 'X-squared = 329610, df = 1, p-value < 2.2e-16'."
+"therefore, Standard.Deficiency and Complaint.Deficiency are highly dependent on each other"
+
+
+
+
+
+
+
+
+
